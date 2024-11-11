@@ -1,31 +1,32 @@
 import JWT from "jsonwebtoken";
 import { comparePassword, hashPassword } from "../helpers/authHelper.js";
 import User from "../models/userModels.js";
+import { get } from "mongoose";
 
 export const registerController = async (req, res) => {
   try {
-    const { name, email, password, phone, address } = req.body;
+    const { name, email, password, phone, address, role } = req.body;
     if (!name) {
-      return res.send({ error: "name is required" });
+      return res.send({ message: "name is required" });
     }
     if (!email) {
-      return res.send({ error: "email is required" });
+      return res.send({ message: "email is required" });
     }
     if (!password) {
-      return res.send({ error: "password is required" });
+      return res.send({ message: "password is required" });
     }
     if (!phone) {
-      return res.send({ error: "phone is required" });
+      return res.send({ message: "phone is required" });
     }
     if (!address) {
-      return res.send({ error: "address is required" });
+      return res.send({ message: "address is required" });
     }
 
     // existing users
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(200).send({ success: true, message: "already exist" });
+      return res.status(200).send({ success: false, message: "already exist" });
     }
 
     // hash password
@@ -34,13 +35,14 @@ export const registerController = async (req, res) => {
 
     // save user
 
-    const user = await new User({
+    const user = await User.create({
       name,
       email,
+      role,
       password: hashpass,
       address,
       phone,
-    }).save();
+    });
 
     res.status(201).send({
       success: true,
@@ -81,7 +83,7 @@ export const loginController = async (req, res) => {
 
     // Token
 
-    const token = await JWT.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const token = await JWT.sign({ id: user._id,role:user.role }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
     res.status(200).send({
@@ -100,3 +102,43 @@ export const loginController = async (req, res) => {
     res.status(500).send({ success: false, message: "error in login", error });
   }
 };
+
+
+
+export const getAllController = async (req, res) => {
+ try {
+   const getAll = await User.find();
+console.log(getAll)
+   return res.status(200).send({
+     success: true,
+     getAll,
+     message:"getalluser"
+    
+   })
+
+
+ } catch (error) {
+   console.log(error)
+   res.send("server")
+ }
+
+}
+
+export const getUserController= async (req, res) => {
+  try {
+   const get = await User.findById(req.params.id);
+console.log(get)
+   return res.status(200).send({
+     success: true,
+     get,
+     message:"getalluser"
+    
+   })
+
+
+ } catch (error) {
+   console.log(error)
+   res.send("server")
+ }
+
+}
