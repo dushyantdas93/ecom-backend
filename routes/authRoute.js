@@ -1,6 +1,7 @@
 import express from "express";
 import {
-    getAllController,
+  forgotPasswordController,
+  getAllController,
   getUserController,
   loginController,
   registerController,
@@ -11,9 +12,18 @@ const router = express.Router();
 
 router.post("/register", registerController);
 router.post("/login", loginController);
+router.post("/forgot-password", forgotPasswordController);
+
 router.get("/getAll", getAllController);
 router.get("/getUser/:id", getUserController);
-router.get("/test",requireSignIn,isAdmin, (req, res) => {
+router.get("/dashboard", requireSignIn, (req, res) => {
+  res.status(200).send({ ok: true });
+});
+router.get("/dashboard/admin", requireSignIn, (req, res) => {
+  res.status(200).send({ ok: true });
+});
+
+router.get("/test", (req, res) => {
   res.send("protected router");
 });
 

@@ -5,7 +5,7 @@ import { get } from "mongoose";
 
 export const registerController = async (req, res) => {
   try {
-    const { name, email, password, phone, address, role } = req.body;
+    const { name, email, password, phone, address, answer, role } = req.body;
     if (!name) {
       return res.send({ message: "name is required" });
     }
@@ -20,6 +20,9 @@ export const registerController = async (req, res) => {
     }
     if (!address) {
       return res.send({ message: "address is required" });
+    }
+    if (!answer) {
+      return res.send({ message: "answer is required" });
     }
 
     // existing users
@@ -42,6 +45,7 @@ export const registerController = async (req, res) => {
       password: hashpass,
       address,
       phone,
+      answer,
     });
 
     res.status(201).send({
@@ -83,9 +87,13 @@ export const loginController = async (req, res) => {
 
     // Token
 
-    const token = await JWT.sign({ id: user._id,role:user.role }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = await JWT.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
     res.status(200).send({
       success: true,
       message: "login successfully",
@@ -103,42 +111,81 @@ export const loginController = async (req, res) => {
   }
 };
 
+export const forgotPasswordController = async (req, res) => {
+  try {
+    const { email, answer, newPassword } = req.body;
+
+    if (!email) {
+      return res.status(400).send({
+        success: false,
+        message: "email is required",
+      });
+    }
+    if (!answer) {
+      return res.status(400).send({
+        success: false,
+        message: "answer is required",
+      });
+    }
+    if (!newPassword) {
+      return res.status(400).send({
+        success: false,
+        message: "newPassword is required",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user || user.answer !== answer) {
+      // Added check for answer
+      return res.status(404).send({
+        success: false,
+        message: "wrong email or answer",
+      });
+    }
+
+    const hashed = await hashPassword(newPassword); // Ensure to await if needed
+    await User.findByIdAndUpdate(user._id, { password: hashed });
+
+    return res.status(200).send({
+      success: true,
+      message: "password reset successfully",
+    });
+  } catch (error) {
+    return res.status(500).send({
+      success: false,
+      message: "something went wrong",
+      error: error.message, // Including error message for debugging
+    });
+  }
+};
 
 
 export const getAllController = async (req, res) => {
- try {
-   const getAll = await User.find();
-console.log(getAll)
-   return res.status(200).send({
-     success: true,
-     getAll,
-     message:"getalluser"
-    
-   })
-
-
- } catch (error) {
-   console.log(error)
-   res.send("server")
- }
-
-}
-
-export const getUserController= async (req, res) => {
   try {
-   const get = await User.findById(req.params.id);
-console.log(get)
-   return res.status(200).send({
-     success: true,
-     get,
-     message:"getalluser"
-    
-   })
+    const getAll = await User.find();
+    console.log(getAll);
+    return res.status(200).send({
+      success: true,
+      getAll,
+      message: "getalluser",
+    });
+  } catch (error) {
+    console.log(error);
+    res.send("server");
+  }
+};
 
-
- } catch (error) {
-   console.log(error)
-   res.send("server")
- }
-
-}
+export const getUserController = async (req, res) => {
+  try {
+    const get = await User.findById(req.params.id);
+    console.log(get);
+    return res.status(200).send({
+      success: true,
+      get,
+      message: "getalluser",
+    });
+  } catch (error) {
+    console.log(error);
+    res.send("server");
+  }
+};
