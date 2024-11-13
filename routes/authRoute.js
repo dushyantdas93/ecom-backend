@@ -19,7 +19,7 @@ router.get("/getUser/:id", getUserController);
 router.get("/dashboard", requireSignIn, (req, res) => {
   res.status(200).send({ ok: true });
 });
-router.get("/dashboard/admin", requireSignIn, (req, res) => {
+router.get("/dashboard/admin", requireSignIn,isAdmin, (req, res) => {
   res.status(200).send({ ok: true });
 });
 
