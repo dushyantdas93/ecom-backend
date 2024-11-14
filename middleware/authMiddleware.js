@@ -1,5 +1,5 @@
 import JWT from "jsonwebtoken";
-import user from "../models/userModels.js";
+
 import User from "../models/userModels.js";
 
 // protected route token based
