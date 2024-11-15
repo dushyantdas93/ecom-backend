@@ -135,50 +135,65 @@ export const deleteProductController = async (req, res) => {
 };
 
 //upate producta
+
 export const updateProductController = async (req, res) => {
   try {
     const { name, description, price, category, quantity, shipping } =
       req.fields;
     const { photo } = req.files;
-    //alidation
+
+    // Validation checks
     switch (true) {
       case !name:
-        return res.status(500).send({ error: "Name is Required" });
+        return res.status(400).send({ error: "Name is required" });
       case !description:
-        return res.status(500).send({ error: "Description is Required" });
+        return res.status(400).send({ error: "Description is required" });
       case !price:
-        return res.status(500).send({ error: "Price is Required" });
+        return res.status(400).send({ error: "Price is required" });
       case !category:
-        return res.status(500).send({ error: "Category is Required" });
+        return res.status(400).send({ error: "Category is required" });
       case !quantity:
-        return res.status(500).send({ error: "Quantity is Required" });
+        return res.status(400).send({ error: "Quantity is required" });
       case photo && photo.size > 1000000:
-        return res
-          .status(500)
-          .send({ error: "photo is Required and should be less then 1mb" });
+        return res.status(400).send({ error: "Photo should be less than 1MB" });
     }
 
-    const products = await productModel.findByIdAndUpdate(
+    // Update product data
+    const updatedData = {
+      name,
+      description,
+      price,
+      quantity,
+      shipping,
+      category, // Assuming category is provided as a valid ObjectId
+      slug: slugify(name),
+    };
+
+    const product = await productModel.findByIdAndUpdate(
       req.params.pid,
-      { ...req.fields, slug: slugify(name) },
+      updatedData,
       { new: true }
     );
+
+    // Handle photo upload if present
     if (photo) {
-      products.photo.data = fs.readFileSync(photo.path);
-      products.photo.contentType = photo.type;
+      product.photo.data = fs.readFileSync(photo.path);
+      product.photo.contentType = photo.type;
     }
-    await products.save();
-    res.status(201).send({
+
+    await product.save();
+
+    res.status(200).send({
       success: true,
-      message: "Product Updated Successfully",
-      products,
+      message: "Product updated successfully",
+      product,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).send({
       success: false,
-      error,
-      message: "Error in Updte product",
+      error: error.message || "Server error",
+      message: "Error updating product",
     });
   }
 };
